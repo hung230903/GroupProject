@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wi-Fi Coordinate Prediction</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        canvas {
+            width: 2000px;
+            height: 600px; /* Đảm bảo đồ thị vuông */
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Predicted Coordinates (X, Y)</h1>
+    <div class="chart-container">
+        <canvas id="coordinateChart"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('coordinateChart').getContext('2d');
+        const data = {
+            datasets: [{
+                label: 'Coordinates',
+                data: [],
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                showLine: false,  // Scatter plot, no connecting lines
+                pointRadius: 5,
+            }]
+        };
+
+        const config = {
+            type: 'scatter', // Scatter plot
+            data: data,
+            options: {
+                responsive: false,
+                plugins: {
+                    legend: {
+                        display: false, // Ẩn chú thích
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'X Coordinate'
+                        },
+                        type: 'linear',
+                        position: 'bottom',
+                        min: -28,
+                        max: 28,
+                        ticks: {
+                            stepSize: 1
+                        },
+                        grid: {
+                            drawBorder: true,
+                            color: (context) => context.tick.value === 0 ? '#000000' : '#CCCCCC', // Đường trục chính
+                            lineWidth: (context) => context.tick.value === 0 ? 2 : 0.5, // Đường nét trục chính dày hơn
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Y Coordinate'
+                        },
+                        min: -10,
+                        max: 10,
+                        ticks: {
+                            stepSize: 1
+                        },
+                        grid: {
+                            drawBorder: true,
+                            color: (context) => context.tick.value === 0 ? '#000000' : '#CCCCCC',
+                            lineWidth: (context) => context.tick.value === 0 ? 2 : 0.5,
+                        }
+                    }
+                }
+            }
+        };
+
+        const coordinateChart = new Chart(ctx, config);
+
+        function updateCoordinates() {
+            fetch('/coordinates')
+                .then(response => response.json())
+                .then(data => {
+                    const x = data.x;
+                    const y = data.y;
+
+                    // Update the chart data
+                    coordinateChart.data.datasets[0].data.push({ x: x, y: y }); // Add the new coordinates
+
+                    coordinateChart.update();
+
+                    // Optional: Limit the number of data points displayed
+                    if (coordinateChart.data.datasets[0].data.length > 50) {
+                        coordinateChart.data.datasets[0].data.shift(); // Remove the oldest point
+                    }
+                })
+                .catch(error => console.error('Error fetching coordinates:', error));
+        }
+
+        setInterval(updateCoordinates, 1000); // Update every second
+    </script>
+</body>
+
+</html>
